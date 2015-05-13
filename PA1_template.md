@@ -1,21 +1,34 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
 
 Firstly, load required libraries for these analyses:
-```{r, warning=FALSE}
+
+```r
 library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
 library(lubridate)
 library(ggplot2)
 ```
 Then import the data from activity.csv file, and perform initial preprocessing:
-```{r}
+
+```r
 data<-read.csv("activity.csv")%>%
     mutate(date=ymd(date))
 ```
@@ -23,42 +36,51 @@ data<-read.csv("activity.csv")%>%
 ## What is mean total number of steps taken per day?
 
 Initially, summarise the data by day:
-```{r}
+
+```r
 summary.by.day<-data%>%
     group_by(date)%>%
     summarise(total=sum(steps,na.rm=TRUE))
 ```
 
 Plot the total steps per day as a histogram:
-```{r}
+
+```r
 qplot(summary.by.day$total,binwidth=1000,xlab="Total steps/day",ylab = "Count")
 ```
 
-Finally, we can calculate the mean (`r mean(summary.by.day$total)`) and median (`r median(summary.by.day$total)`) steps per day:
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+
+Finally, we can calculate the mean (9354.2295082) and median (10395) steps per day:
 
 
 ## What is the average daily activity pattern?
 
 For this, we need to summarise the data by each interval:
-```{r}
+
+```r
 summary.by.interval<-data%>%
     group_by(interval)%>%
     summarise(mean=mean(steps,na.rm=TRUE))
 ```
 
 Now we can plot the average activity over the course of a day:
-```{r}
+
+```r
 qplot(interval,mean,data=summary.by.interval,geom="line",xlab="Interval",ylab="Average steps")
 ```
 
-And the interval with the most steps was therefore `r arrange(summary.by.interval,desc(mean))[[1,1]]`, with `r round(arrange(summary.by.interval,desc(mean))[[1,2]],2)` steps.
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+
+And the interval with the most steps was therefore 835, with 206.17 steps.
 
 
 ## Imputing missing values
 
-The dataset has `r sum(is.na(data$steps))` missing values. We imputed data for these missing values by replacing them with the mean value for that interval, as follows:
+The dataset has 2304 missing values. We imputed data for these missing values by replacing them with the mean value for that interval, as follows:
 
-```{r}
+
+```r
 imputed.data<-data%>%
     left_join(summary.by.interval, by="interval")%>%
     mutate(imputed.steps=ifelse(is.na(steps), mean, steps))%>%
@@ -67,26 +89,31 @@ imputed.data<-data%>%
 
 The previous activity per day analysis can now be repeated:
 
-```{r}
+
+```r
 imputed.summary.by.day <- imputed.data%>%
     group_by(date)%>%
     summarise(total=sum(steps))
 qplot(imputed.summary.by.day$total,binwidth=1000,xlab="Total steps/day",ylab = "Count")
 ```
 
-The new mean (`r mean(imputed.summary.by.day$total)`) is now identical to the new median (`r median(imputed.summary.by.day$total)`), and both are higher than the previous averages. This is because for several days there were no values recorded, and so the total steps for those days were zero. imputing average scores at these points therefore has raised the median, and to a greater extent, the mean.
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
+The new mean (1.0766189\times 10^{4}) is now identical to the new median (1.0766189\times 10^{4}), and both are higher than the previous averages. This is because for several days there were no values recorded, and so the total steps for those days were zero. imputing average scores at these points therefore has raised the median, and to a greater extent, the mean.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 Add a new variable to the datset to mark whether the given day is a weekday or weekend:
 
-```{r}
+
+```r
 data_weekdays<-mutate(data,weekday=factor(ifelse(wday(date)%in%2:6,"weekday","weekend")))
 ```
 
 And repeat the time-series plot, facetting against the weekend/weekday variable:
 
-```{r}
+
+```r
 data_weekdays<-mutate(data,weekday=factor(ifelse(wday(date)%in%2:6,"weekday","weekend")))
 summary.by.interval_weekdays<-data_weekdays%>%
     group_by(interval,weekday)%>%
@@ -94,4 +121,4 @@ summary.by.interval_weekdays<-data_weekdays%>%
 qplot(interval,mean,data=summary.by.interval_weekdays,geom="line",xlab="Interval",ylab="Average steps",facets = weekday~.)
 ```
 
-It is clear from this plot that weekdays display greater activity in the early morning, and generally less activity over the midday/early afternoon period.
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
